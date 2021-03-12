@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rename</title>
+  <style>
+    body {
+      margin: 0;
+    }
+    label {
+      display: flex;
+      text-align: center;
+      height: 25vh;
+      padding: 16px;
+      background: #ccc;
+      transition: background .3s linear;
+    }
+    #filesfield {
+      display: none;
+    }
+    #progress {
+      width:0;
+      background: #F60;
+      color: #fff;
+      font-weight: 700;
+    }
+    .load {
+      background: #fcf;
+    }
+  </style>
+
+  <script type="text/javascript">
+
+    function stopDefaults (ev) {
+      const dropzone = document.getElementById('fileslabel');
+      ev.preventDefault();
+      ev.stopPropagation();
+      console.log(ev.type);
+
+      switch (ev.type) {
+        case 'dragover':
+          dropzone.classList.add('load');
+          break;
+        case 'drop':
+          dropzone.classList.remove('load');
+      }
+    }
+
+    function addFilesAndSubmit (ev) {
+      let files = ev.target.files || ev.dataTransfer.files;
+      console.log(files);
+      document.getElementById('filesfield').files = files;
+      submitFilesForm(document.getElementById('filesform'));
+    }
+
+    function submitFilesForm (form) {
+      var fd = new FormData();
+      for (var i = 0; i < form.filesfield.files.length; i++) {
+        var field = form.filesfield;
+        fd.append(field.name, field.files[i], field.files[i].name);
+      }
+
+      var progress = document.getElementById('progress');
+      var x = new XMLHttpRequest();
+      if (x.upload) {
+        x.upload.addEventListener('progress', function (ev){
+          var percent = parseInt(ev.loaded / ev.total * 100);
+          progress.innerText = progress.style.width = percent + '%';
+        });
+      }
+
+      x.onreadystatechange = function () {
+        if (x.readystate === 4) {
+          progress.innetText = progress.style.width = '';
+          form.filesfield.value = '';
+          if (x.status === 200) {
+            console.log('OK');
+          }
+        }
+      };
+      x.open('post', form.action, true);
+      x.send(fd);
+
+      return false;
+    }
+  </script>
+</head>
+<body>
+  <form id="filesform" action="/upload" method="post" onchange="submitFilesForm(this)">
+    <input type="file" name="filesfield" id="filesfield" accept="*/*" multiple>
+
+    <label for="filesfield" id="fileslabel"
+    ondragenter="stopDefaults(event)"
+    ondragover="stopDefaults(event)"
+    ondragleave="stopDefaults(event)"
+    ondrop="stopDefaults(event); addFilesAndSubmit(event)">Click or Drag n Drop files.</label>
+  </form>
+  <div style="text-align:left;">
+    <div id="progress"></div>
+  </div>
+</body>
+</html>
